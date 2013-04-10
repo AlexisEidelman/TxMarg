@@ -114,7 +114,7 @@ run;
 
 
 proc freq; table controle; run;
-proc means; var preuve; run;
+*proc means; *var preuve; *run;
 
 /* calcul des taux marginaux et décomposition*/ 
 %macro taux(rev,out,detail);	
@@ -128,8 +128,8 @@ proc means; var preuve; run;
 *	drop d_: ;
 	run; 
 %mend; 
-
-%taux(net,taux,1)
+%taux(net,taux_net,1);
+%taux(sbrut,taux_brut,1);
 
 %macro sortie(rev,out_name,precision,detail); 
 	%taux(&rev,temp,&detail)	
@@ -233,11 +233,6 @@ run;
 /****************************************************************************/
 /* Taux marginal de revenu disponible en fonction du revenu net				*/
 /****************************************************************************/
-preuve= d_revdisp-sum(0,d_revnet,d_prelev_pat,d_csgi,d_impot,d_prelevlib,d_th,d_crds_ar,
-					d_crds_p,d_af,d_com,d_asf,d_aeeh,d_ars,d_paje,d_clca,d_cmg,d_creche,
-				    d_alogl,d_alogacc,d_aah,d_caah,d_asi,d_aspa,d_rsas,d_rsanonrec,
-					d_pper,d_bcol,d_blyc,d_apa);
-
 
 proc means data=taux(where=(d_revnet >50 & 
  controle="09" & d_apa=0 & d_rsas=0 & d_rsanonrec=0  & d_paje=0  & d_aah=0 & d_caah=0)); 
@@ -269,7 +264,7 @@ run;*/
 proc means data=graph noprint; 
 	var t_revdisp t_minima t_pf_condress t_pf_sansress t_af t_alog t_prelev; 
 	class REVNET_1000; 
-	weight poi_bis; 
+	weight poi_3; 
 	output out=graph1 mean=;
 run;
 proc export dbms=xls replace data=graph1

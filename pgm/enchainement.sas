@@ -157,7 +157,17 @@ fait tourner rsa;*/
 %include "&presta.\apa.sas";
 */
 /* A CHANGER !!! */
-data modele.apa; set modele0.apa;  run;
+%macro moulinette_apa;
+proc sort data=modele0.apa; by ident noi; run;
+data modele.apa(drop=identbis); 
+	merge modele0.apa(in=a) tx_marg.liste1(in=b drop=noi);by ident; if a; if b; run;
+%do i = 2 %to 6; 
+	data temp(drop=identbis); merge modele0.apa(in=a) tx_marg.liste&i(in=b drop=noi);by ident; if a; if b; 
+	ident=identbis;run;
+	data modele.apa; set modele.apa temp;run;
+%end; 
+%mend;
+%moulinette_apa;
 
 %let tps_fin = %sysfunc(time(),10.);
 %put %eval((&tps_fin-&tps_ini)/60);*temps en minutes;
