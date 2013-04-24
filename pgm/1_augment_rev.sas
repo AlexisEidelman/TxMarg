@@ -13,6 +13,9 @@ data tx_marg.liste_act;  *On a un identbis par personne à étudier, donc un ident
 			base0.baseind(keep=ident noi declar1 declar2 persfip1 persfip2);
 	by ident noi; 
 	if a; 
+	/*on change les declar quand il faut !*/
+	substr(declar1,4,8)=compress(identbis);
+	if declar2 ne "" then substr(declar2,4,8)=compress(identbis);
 run;
 
 
@@ -54,10 +57,10 @@ run;
 	/*les variables fiscales individuelles*/
 	array vous 		/* revenus salariaux */
 					_1aj _1au _1aq _1dy	_1lz
-					/* zrici non professionnels */
+					/* zrici non professionnels 
 					_5tc _5td _5nn _5no _5np _5nx _5nq _5nr 	
 					_5nb _5nc _5nd _5na _5nf _5ng _5ny _5ne  
-					_5nh _5ni _5nj _5nk _5nl _5nm _5nz 		
+					_5nh _5ni _5nj _5nk _5nl _5nm _5nz */		
 					/* zrici professionnels */
 					_5ta _5tb _5kn _5ko _5kp _5kx _5kq _5kr 
 					_5kb _5kh _5kc _5ki _5kd _5kj _5ha _5ka _5kf _5kl _5kg _5km _5qa _5qj  _5ke _5ks 
@@ -67,18 +70,18 @@ run;
 					/* zrnci professionnels */
 					_5te _5hp _5hq _5hv _5hr _5hs 
 					_5qb _5qc _5qe _5qd _5ql _5qm _5qh _5qi _5qk _5tf _5ti 
-					/* zrnci non professionnels */
+					/* zrnci non professionnels 
 					_5tg _5th _5ku _5ky _5kv _5kw 
-					_5hk _5ik _5jg _5sn _5jj _5sp _5so _5sv
+					_5hk _5ik _5jg _5sn _5jj _5sp _5so _5sv */
 					/* revenus à imposer aux prelevements sociaux */
 					_5hy _5hz _5hg ;
 
 	array conj		/* revenus salariaux */
 					_1bj _1bu _1bq _1ey	_1mz
-					/* zrici non professionnels */
+					/* zrici non professionnels 
 					_5uc _5ud _5on _5oo _5op _5ox _5oq _5or 			
 					_5ob _5oc _5od _5oa _5of _5og _5oy _5oe  
-					_5oh _5oi _5oj _5ok _5ol _5om _5oz 		
+					_5oh _5oi _5oj _5ok _5ol _5om _5oz */		
 					/* zrici professionnels */
 					_5ua _5ub _5ln _5lo _5lp _5lx _5lq _5lr
 					_5lb _5lh _5lc _5li _5ld _5lj _5ia _5la _5lf _5ll _5lg _5lm _5ra _5rj _5le _5ls 
@@ -88,18 +91,18 @@ run;
 					/* zrnci professionnels */
 					_5ue _5ip _5iq _5iv _5ir _5is 
 					_5rb _5rc _5re _5rd _5rl _5rm _5rh _5ri _5rk _5uf _5ui 
-					/* zrnci non professionnels */
+					/* zrnci non professionnels 
 					_5ug _5uh _5lu _5ly _5lv _5lw 
-					_5jk _5kk _5rf _5ns _5rg _5nu _5nt _5sw
+					_5jk _5kk _5rf _5ns _5rg _5nu _5nt _5sw */
 					/* revenus à imposer aux prelevements sociaux */
 					_5iy _5iz _5ig ;
 
 	array Pac1 		/* revenus salariaux */
 					_1cj _1cu 
-					/* zrici non professionnels */
+					/* zrici non professionnels 
  					_5vc _5vd _5pn _5po _5pp _5px _5pq _5pr 			
 					_5pb _5pc _5pd _5pa _5pf _5pg _5py _5pe	
-					_5ph _5pi _5pj _5pk _5pl _5pm _5pz		
+					_5ph _5pi _5pj _5pk _5pl _5pm _5pz	*/	
 					/* zrici professionnels */
 					_5va _5vb _5mn _5mo _5mp _5mx _5mq _5mr 
 					_5mb _5mh _5mc _5mi _5md _5mj _5ja _5ma _5mf _5ml _5mg _5mm _5sa _5sj _5me _5ms 
@@ -109,9 +112,9 @@ run;
 					/* zrnci professionnels */
 					_5ve _5jp _5jq _5jv _5jr _5js
 					_5sb _5sh _5sc _5si _5se _5sk _5sd _5sl _5vf _5vi 
-					/* zrnci non professionnels */
+					/* zrnci non professionnels 
 					_5vg _5vh _5mu _5my _5mv _5mw
-					_5lk _5mk _5sf _5os _5sg _5ou _5ot _5sx 
+					_5lk _5mk _5sf _5os _5sg _5ou _5ot _5sx */
 					/* revenus à imposer aux prelevements sociaux */
 					_5jy _5jz;
 

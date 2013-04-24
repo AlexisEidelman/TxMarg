@@ -25,20 +25,20 @@ on change l'identifiant*/
 
 
 
-data liste1; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="&anr"))         ;run;
-data liste2; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+1)"));run;
-data liste3; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+2)"));run;
-data liste4; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+3)"));run;
-data liste5; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+4)"));run;
-data liste6; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+5)"));run;
+data tx_marg.liste1; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="&anr"))         ;run;
+data tx_marg.liste2; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+1)"));run;
+data tx_marg.liste3; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+2)"));run;
+data tx_marg.liste4; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+3)"));run;
+data tx_marg.liste5; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+4)"));run;
+data tx_marg.liste6; set tx_marg.liste_act (keep=ident identbis noi where=(substr(identbis,1,2)="%eval(&anr+5)"));run;
 
 
 %macro moulinette(table);
 proc sort data=base0.&table; by ident noi; run;
 data base.&table(drop=identbis); 
-	merge base0.&table(in=a) liste1(in=b drop=noi);by ident; if a; if b; run;
+	merge base0.&table(in=a) tx_marg.liste1(in=b drop=noi);by ident; if a; if b; run;
 %do i = 2 %to 6; 
-	data temp(drop=identbis); merge base0.&table(in=a) liste&i(in=b drop=noi);by ident; if a; if b; 
+	data temp(drop=identbis); merge base0.&table(in=a) tx_marg.liste&i(in=b drop=noi);by ident; if a; if b; 
 	ident=identbis;
 
 	/*on change les declar quand il faut !*/
@@ -77,13 +77,13 @@ data base.&table(drop=identbis);
 %macro moulinette_men(table);
 	proc sort data=base0.&table; by ident ; run;
 	data base.&table(drop=identbis); 
-		merge base0.&table(in=a) liste1(in=b drop=noi);
+		merge base0.&table(in=a) tx_marg.liste1(in=b drop=noi);
 		by ident; if a; if b; 
 	run;
 	%do i = 2 %to 6; 
 		data temp(drop=identbis); 
 			merge 	base0.&table(in=a) 
-					liste&i(in=b drop=noi);
+					tx_marg.liste&i(in=b drop=noi);
 			by ident; 
 			if a; if b; 
 			ident=identbis;	
