@@ -352,9 +352,175 @@ libname modele "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_sep_augm
 data diff_taux; 
 	merge taux_brut_ini taux_brut; 
 	by identbis;
+    verif = z_act - z_act_ini; 
 run;
-
+/* TOCHECK: verif is 0 */
+proc means; var verif; run; 
+    
 /*pour terminer l'analyse : 
 	calculer les taux marginaux revbrut et ir
-	aller chercher les info correspondant à identbis : sexe, quel apporteur de ressource. 
-	
+	aller chercher les info correspondant à identbis : sexe, quel apporteur de ressource. */
+    
+data apport;
+    set modele.impot; *ou une autre ou il y a riche et persfip;
+    /*si identbis est là*/
+        keep declar ident identbis riche persfip; 
+    /* sinon */
+        identbis = substr(declar,3,8); 
+    if (persfip = 'vous' et riche='vous') | (persfip = 'conj' et riche='conj') then
+        apporteur = 1; 
+    else apporteur = 2; 
+run; 
+proc sort data=apport; by identbis; run;
+proc sort data=diff_taux; by identbis; run;
+/* TOCHECK: en théorie on a le même nombre de lignes dans les deux bases*/
+data diff_taux; 
+    merge diff_taux(in=a) apport(keep=identbis apporteur); 
+    by identbis; 
+    if a; 
+run;
+
+/*en fait on a l'air d'avoir ident et noi en fonction de identbis dans taux_brut et donc dans diff_taux
+(voir sortie->baserev) ce qui nous simplifie la tache*/
+proc sort data=diff_taux; by ident noi; run;
+proc sort data=base0.baseind; by ident noi; run;
+
+data diff_taux; 
+    merge diff_taux(in=a) base0.baseind(keep=ident noi sexe age); 
+    by identbis; 
+    if a; 
+run;
+
+proc freq data= diff_taux;
+    table sexe*apporteur;
+    weight poi; 
+run;
+
+%let chem_sortie = X:\HAB-INES\études\Taux marginaux\sorties_maries;
+
+/***** on traite d'abord les déclarations conjointe *****/
+	data graph; 
+		set diff_taux(where=(-t_revdisp>-10  & -t_revdisp_ini>-10
+							& revnet >-10 
+							& revnet<500000 
+							& r_pper ne 9999));
+		Z_ACT_500		= 500*round(z_act_ini/500.);
+		Z_ACT_1000		= 1000*round(z_act/1000.);
+		Z_ACT_2000		= 2000*round(z_act/2000.);
+		t_IR			= sum(t_impot_ini,t_prelevlib_ini,t_pper_ini);
+		t_autres_prelev	= sum(t_th_ini,t_prelev_pat_ini,t_csgi_ini,t_crds_ar_ini,t_crds_p_ini,t_csgd_ini);
+		t_cotS			= sum(t_cotassu_ini,t_cotred_ini,-t_cotis_patro_ini );
+        t_minima        =  t_minima_ini         ;
+        t_pf_condress   =  t_pf_condress_ini    ;
+        t_pf_sansress   =  t_pf_sansress_ini    ;
+        t_alog          =  t_alog_ini           ;
+		t_af            =  t_af_ini             ;                   
+		t_cotP			= 0;                    
+		t_revdisp 		= -t_revdisp_ini;
+		MTR 			= 100-t_revdisp;
+		test 			= t_revdisp -(100-  t_minima - t_pf_condress-t_pf_sansress - t_alog 
+							-t_af - t_autres_prelev-t_iR -t_cotS-t_cotP);
+		label  REVBRUT_1000='Revenu brut par tranche de 1000 euros';
+		label  REVBRUT_2000='Revenu brut par tranche de 2000 euros';
+	run;
+
+* on fait attention à ne pas prendre les cas bizarres où les gens sont I;
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C'),"&sortie.\result_maries.xls",'C_all_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=1),"&sortie.\result_maries.xls",'C_app1_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=2),"&sortie.\result_maries.xls",'C_app2_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0'),"&sortie.\result_maries.xls",'C0_all_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=1),"&sortie.\result_maries.xls",'C0_app1_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=2),"&sortie.\result_maries.xls",'C0_app2_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1'),"&sortie.\result_maries.xls",'C1_all_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=1),"&sortie.\result_maries.xls",'C1_app1_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=2),"&sortie.\result_maries.xls",'C1_app2_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2'),"&sortie.\result_maries.xls",'C2_all_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=1),"&sortie.\result_maries.xls",'C2_app1_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=2),"&sortie.\result_maries.xls",'C2_app2_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+'),"&sortie.\result_maries.xls",'C3_all_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=1),"&sortie.\result_maries.xls",'C3_app1_uni');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=2),"&sortie.\result_maries.xls",'C3_app2_uni');
+
+/***** on traite ensuite les déclarations séparées *****/
+	data graph; 
+		set diff_taux(where=(-t_revdisp>-10  & -t_revdisp_ini>-10
+							& revnet >-10 
+							& revnet<500000 
+							& r_pper ne 9999));
+		Z_ACT_500		= 500*round(z_act/500.);
+		Z_ACT_1000		= 1000*round(z_act/1000.);
+		Z_ACT_2000		= 2000*round(z_act/2000.);
+		t_IR			= sum(t_impot,t_prelevlib,t_pper);
+		t_autres_prelev	= sum(t_th,t_prelev_pat,t_csgi,t_crds_ar,t_crds_p,t_csgd);
+		t_cotS			= sum(t_cotassu,t_cotred,-t_cotis_patro );
+		t_cotP			= 0;
+		t_revdisp 		= -t_revdisp;
+		MTR 			= 100-t_revdisp;
+		test 			= t_revdisp -(100-  t_minima - t_pf_condress-t_pf_sansress - t_alog 
+							-t_af - t_autres_prelev-t_iR -t_cotS-t_cotP);
+		label  REVBRUT_1000='Revenu brut par tranche de 1000 euros';
+		label  REVBRUT_2000='Revenu brut par tranche de 2000 euros';
+	run;
+
+* on fait attention à ne pas prendre les cas bizarres où les gens sont I;
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C'),"&sortie.\result_maries.xls",'C_all_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=1),"&sortie.\result_maries.xls",'C_app1_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=2),"&sortie.\result_maries.xls",'C_app2_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0'),"&sortie.\result_maries.xls",'C0_all_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=1),"&sortie.\result_maries.xls",'C0_app1_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=2),"&sortie.\result_maries.xls",'C0_app2_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1'),"&sortie.\result_maries.xls",'C1_all_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=1),"&sortie.\result_maries.xls",'C1_app1_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=2),"&sortie.\result_maries.xls",'C1_app2_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2'),"&sortie.\result_maries.xls",'C2_all_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=1),"&sortie.\result_maries.xls",'C2_app1_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=2),"&sortie.\result_maries.xls",'C2_app2_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+'),"&sortie.\result_maries.xls",'C3_all_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=1),"&sortie.\result_maries.xls",'C3_app1_sep');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=2),"&sortie.\result_maries.xls",'C3_app2_sep');
+
+
+/***** en enfin, on regarde les différences *****/
+	data graph; 
+		set diff_taux(where=(-t_revdisp>-10  & -t_revdisp_ini>-10
+							& revnet >-10 
+							& revnet<500000 
+							& r_pper ne 9999));
+		Z_ACT_500		= 500*round(z_act_ini/500.);
+		Z_ACT_1000		= 1000*round(z_act/1000.);
+		Z_ACT_2000		= 2000*round(z_act/2000.);
+		t_IR			= sum(t_impot,t_prelevlib,t_pper) - sum(t_impot_ini,t_prelevlib_ini,t_pper_ini);
+		t_autres_prelev	= sum(t_th,t_prelev_pat,t_csgi,t_crds_ar,t_crds_p,t_csgd) -
+                            sum(t_th_ini,t_prelev_pat_ini,t_csgi_ini,t_crds_ar_ini,t_crds_p_ini,t_csgd_ini);
+		t_cotS			= sum(t_cotassu,t_cotred,-t_cotis_patro ) -
+                            sum(t_cotassu_ini,t_cotred_ini,-t_cotis_patro_ini );
+        t_minima        =  t_minima       - t_minima_ini         ;
+        t_pf_condress   =  t_pf_condress  - t_pf_condress_ini    ;
+        t_pf_sansress   =  t_pf_sansress  - t_pf_sansress_ini    ;
+        t_alog          =  t_alog         - t_alog_ini           ;
+		t_af            =  t_af           - t_af_ini             ;                    
+		t_cotP			= 0               	
+		t_revdisp 		= -t_revdisp +	t_revdisp_ini;   	
+		MTR 			= 100-t_revdisp;
+		test 			= t_revdisp -(100-  t_minima - t_pf_condress-t_pf_sansress - t_alog 
+							-t_af - t_autres_prelev-t_iR -t_cotS-t_cotP);
+		label  REVBRUT_1000='Revenu brut par tranche de 1000 euros';
+		label  REVBRUT_2000='Revenu brut par tranche de 2000 euros';
+	run;
+
+* on fait attention à ne pas prendre les cas bizarres où les gens sont I;
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C'),"&sortie.\result_maries.xls",'C_all_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=1),"&sortie.\result_maries.xls",'C_app1_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(substr(typfam,1,1)='C' and apporteur=2),"&sortie.\result_maries.xls",'C_app2_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0'),"&sortie.\result_maries.xls",'C0_all_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=1),"&sortie.\result_maries.xls",'C0_app1_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C0' and apporteur=2),"&sortie.\result_maries.xls",'C0_app2_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1'),"&sortie.\result_maries.xls",'C1_all_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=1),"&sortie.\result_maries.xls",'C1_app1_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C1' and apporteur=2),"&sortie.\result_maries.xls",'C1_app2_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2'),"&sortie.\result_maries.xls",'C2_all_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=1),"&sortie.\result_maries.xls",'C2_app1_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C2' and apporteur=2),"&sortie.\result_maries.xls",'C2_app2_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+'),"&sortie.\result_maries.xls",'C3_all_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=1),"&sortie.\result_maries.xls",'C3_app1_diff');
+%decomp_taux(graph,G1,Z_ACT_1000,(typfam='C3+' and apporteur=2),"&sortie.\result_maries.xls",'C3_app2_diff');
