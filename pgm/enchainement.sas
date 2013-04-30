@@ -73,6 +73,6 @@ data modele.basemen;
 	revbrut=revsbrut-Cotis_patro;
 run;
 
-%let sortie = "X:\HAB-INES\études\Taux marginaux\sorties";
+%let sortie = X:\HAB-INES\études\Taux marginaux\sorties;
 %include  "&chemin_dossier_tx_marg.\macro_sortie.sas";
 %sortie_tx_marg;

@@ -126,6 +126,7 @@ data modele.apa(drop=identbis);
 regroupement des donnees au niveau menages ;
 %let menage=&chemin_dossier.\pgm\4basemen;
 %include "&menage\agregation_cotis.sas"; *calcul des cotisations patrimoine; 
+
 %include "&menage\basemen.sas";
 
 

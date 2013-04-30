@@ -30,10 +30,10 @@ sum(controle09$X_FREQ_)/2
 
 plot.window(xlim=c(1,200), ylim=c(-100,100))
 
-graph <- function(table)
+graph <- function(table) {
   for (var in names(table)) {
     if (substr(var,1,2)=="t_" & var != "t_af") {
-  
+      
       condition = which(table[,var] != 0)
       print(var)
       print (condition)
@@ -41,7 +41,11 @@ graph <- function(table)
       plot(table[condition,"REVNET_1000"],table[condition,var], type = "l")
       title(main=paste("taux marginal",substring(var,3)) )
     }
-  }
+  } 
+}
+
+graph(result)
+
 
 
 var = "t_alog"
