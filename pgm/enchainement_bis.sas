@@ -365,37 +365,59 @@ proc means; var verif; run;
     
 /*pour terminer l'analyse : 
 	calculer les taux marginaux revbrut et ir
-	aller chercher les info correspondant à identbis : sexe, quel apporteur de ressource. */
+	aller chercher les info correspondant à identbis : sexe, quel apporteur de ressource. 
+*/
     
-data apport;
-    set final.maries_coup(keep=declar ident noi riche persfip1 rename=(persfip1=persfip)); *ou une autre ou il y a riche et persfip;
-    /*si identbis est là*/
-        keep declar ident identbis riche persfip apporteur; 
-    /* sinon */
-        identbis = substr(declar,3,8); 
-    if (persfip = 'vous' and riche='vous') | (persfip = 'conj' and riche='conj') then
-        apporteur = 1; 
-    else apporteur = 2; 
-run; 
-proc sort data=apport; by identbis; run;
-proc sort data=diff_taux; by identbis; run;
-/* TOCHECK: en théorie on a le même nombre de lignes dans les deux bases*/
-data diff_taux; 
-    merge diff_taux(in=a) apport(keep=identbis apporteur); 
-    by identbis; 
-    if a; 
-run;
-
-/*en fait on a l'air d'avoir ident et noi en fonction de identbis dans taux_brut et donc dans diff_taux
-(voir sortie->baserev) ce qui nous simplifie la tache*/
-proc sort data=diff_taux; by ident noi; run;
+ /****   on a z_act, on va chercher z_act_conj
+        identbis -> ident + noi -> declar -> ident+noi du conjoint -> z_act_conj 
+ */
+         
+*normalement on a deja ident noi dans diff_taux, sinon, faire une moulinette à base de tx_marg.list_act;
+proc sort data= diff_taux; by ident noi; run; 
 proc sort data=base0.baseind; by ident noi; run;
 
-data diff_taux; 
-    merge diff_taux(in=a) base0.baseind(keep=ident noi sexe age); 
-    by identbis; 
+data declar;
+    merge diff_taux(in=a keep=ident noi) base0.baseind(keep=ident noi declar1 persfip sexe age);
+    by ident noi; 
+    if a; 
+run; 
+proc sort data=base0.baseind; by declar1; run;
+data vous; set base0.baseind(keep=declar1 noi persfip rename=(noi=noi_conj)); if persfip='vous'; run; 
+data conj; set base0.baseind(keep=declar1 noi persfip rename=(noi=noi_conj)); if persfip='conj'; run; 
+
+proc sort data=declar; by declar1; run;
+data declar_vous; 
+    merge declar(in=a where=(persfip='vous')) conj; 
+    by declar1; 
     if a; 
 run;
+
+data declar_conj; 
+    merge declar(in=a where=(persfip='conj')) vous; 
+    by declar1; 
+    if a; 
+run;
+/* TOCHECK: nombre de ligne de declar_vous + declar_conj = nb ligne declar */ 
+data declar; set declar_vous declar_conj; run; 
+proc sort data= declar; by ident noi_conj; run; 
+proc sort data= base0.baseind; by ident noi; run; 
+data rev_act_conj(drop = zsali&anr2 zragi&anr2 zrnci&anr2 zrici&anr2); 
+    merge declar(in=a) 
+          base0.baseind(keep= ident noi zsali&anr2 zragi&anr2  zrnci&anr2 zrici&anr2 rename=(noi=noi_conj));
+    by ident noi_conj; 
+    if a; 
+    z_act_conj = sum(0,zsali&anr2,zragi&anr2,zrnci&anr2,zrici&anr2);
+run;  
+proc sort data= rev_act_conj; by ident noi; 
+
+data diff_taux; 
+    merge diff_taux(in=a) rev_act_conj; 
+    by ident noi; 
+    if a; 
+    if z_act > z_act_conj then apporteur = 1; 
+    else apporteur = 2; 
+run;
+
 
 proc freq data= diff_taux;
     table sexe*apporteur;
