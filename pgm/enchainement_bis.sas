@@ -295,7 +295,7 @@ libname b_augm "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_augm";
 libname b_sep "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_sep";
 libname b_sep_a "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_sep_augm";
 
-/*normalement, on a déjà le cotis_menage qui est déjà inclu parce que 3_sorties
+/*normalement, on a déjà le cotis_menage qui est déjà inclu parce que la macro_sorties
 a déjà tourné*/
 data maries_bis(rename=(ident=identbisf identbis=identf)); set maries.maries; run; 
 data maries_bis(rename=(identf=ident identbisf=identbis)); set maries_bis; run; 
@@ -303,19 +303,20 @@ data maries_bis(rename=(identf=ident identbisf=identbis)); set maries_bis; run;
 proc sort data=maries_bis; by identbis; run;
 data b.basemen; merge maries_bis(in=a keep = identbis rename=(identbis=ident)) /*il faudra peut être droper le identbis pour sorties*/
 					modele0.basemen;
-by ident; if a; run;
+by ident; if a; if ident ne ''; run;
 proc sort data=maries_bis; by ident; run;
 proc sort data=modele.basemen; by ident; run;
 data b_augm.basemen; 
 				merge maries_bis(in=a) 
 				      modele.basemen;
-by ident; if a; run;
+by ident; if a; if ident ne '';run;
 
 proc sort data=maries.impot_augm; by ident; run;
 data b_sep.basemen;
 merge modele0.basemen(rename=(impot=impot_ini)) maries.impot(in=a keep=ident impot);
 by ident;
 if a;
+if ident ne '';
 revdisp = revdisp - impot + impot_ini;
 revdisp_nonfps = revdisp_nonfps - impot + impot_ini;
 run;
@@ -325,6 +326,7 @@ data b_sep_a.basemen;
 merge modele.basemen(rename=(impot=impot_ini ident=identbis)) maries.impot_augm(in=a keep=ident identbis impot);
 by identbis;
 if a;
+if identbis ne '';
 revdisp = revdisp - impot + impot_ini;
 revdisp_nonfps = revdisp_nonfps - impot + impot_ini;
 run;
@@ -334,25 +336,29 @@ run;
 /***********************************************************************
 ************************  Sortie   *********************************
 ************************************************************************/
-
 %include  "&chemin_dossier_tx_marg.\macro_sortie.sas";
 
 libname modele0 "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen";
 libname modele "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_augm";
-%let chem_sortie = X:\HAB-INES\études\Taux marginaux\sorties_maries\ini;
+
+%let sortie = X:\HAB-INES\études\Taux marginaux\sorties_maries\ini;
 %sortie_tx_marg;
 %renamevar(taux_brut,taux_brut,'ident' 'identbis', ini);
 data taux_brut_ini; set taux_brut; run;
 
 libname modele0 "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_sep";
 libname modele "X:\HAB-INES\études\Taux marginaux\tables\maries\basemen_sep_augm";
-%let chem_sortie = X:\HAB-INES\études\Taux marginaux\sorties_maries\sep;
+data modele.basemen; set modele.basemen (drop= ident rename=(identbis=ident));run;
+
+%let sortie = X:\HAB-INES\études\Taux marginaux\sorties_maries\sep;
 %sortie_tx_marg;
 
+proc sort data=taux_brut_ini; by identbis; run;
+proc sort data=taux_brut; by identbis; run;
 data diff_taux; 
 	merge taux_brut_ini taux_brut; 
 	by identbis;
-    verif = z_act - z_act_ini; 
+    verif = z_act - z_actini; 
 run;
 /* TOCHECK: verif is 0 */
 proc means; var verif; run; 
@@ -362,12 +368,12 @@ proc means; var verif; run;
 	aller chercher les info correspondant à identbis : sexe, quel apporteur de ressource. */
     
 data apport;
-    set modele.impot; *ou une autre ou il y a riche et persfip;
+    set final.maries_coup(keep=declar ident noi riche persfip1 rename=(persfip1=persfip)); *ou une autre ou il y a riche et persfip;
     /*si identbis est là*/
-        keep declar ident identbis riche persfip; 
+        keep declar ident identbis riche persfip apporteur; 
     /* sinon */
         identbis = substr(declar,3,8); 
-    if (persfip = 'vous' et riche='vous') | (persfip = 'conj' et riche='conj') then
+    if (persfip = 'vous' and riche='vous') | (persfip = 'conj' and riche='conj') then
         apporteur = 1; 
     else apporteur = 2; 
 run; 
