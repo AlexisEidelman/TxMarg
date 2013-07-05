@@ -106,7 +106,7 @@ data travail.indfip&anr1; set maries(where=(noi >'50') keep=ident noi persfip1 d
 *séparation proprement dite;
 %let chemin=X:\HAB-INES\études\Mariage\mariage 000;
 %include "X:\HAB-INES\études\Mariage\listes_variables.sas";
-%let option_repart="vous";  /*choix : moitie, alea, riche, pauvre, vous, conj*/
+%let option_repart="moitie";  /*choix : moitie, alea, riche, pauvre, vous, conj*/
 %let option_enfant="vous"; /* choix vous, conj, prorata (des revenus)*/
 %include "&chemin\1_revenus_adultes.sas";
 /* on ne permet pas optim pour l'instant*/
